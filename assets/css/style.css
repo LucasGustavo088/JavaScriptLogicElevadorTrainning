@@ -1,0 +1,9 @@
+
+
+#elevadorCanvas {
+    /*width: 1366px;*/
+    /*height: 768px;*/
+    margin: 0 auto;
+    position: relative;
+    border: 1px solid #000;
+}
