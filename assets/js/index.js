@@ -1,29 +1,6 @@
 var canvas = document.getElementById("elevadorCanvas");
 var ctx = canvas.getContext("2d");
 
-// window.addEventListener("resize", OnResizeCalled, false);
-
-// function OnResizeCalled() {
-//     canvas.style.width = window.innerWidth + 'px';
-//     canvas.style.height = window.innerHeight + 'px';
-// }
-
-// var gameWidth = window.innerWidth;
-// var gameHeight = window.innerHeight;
-// var scaleToFitX = gameWidth / 800;
-// var scaleToFitY = gameHeight / 480;
-// var currentScreenRatio = gameWidth / gameHeight;
-// var optimalRatio = Math.min(scaleToFitX, scaleToFitY);
-// if (currentScreenRatio >= 1.77 && currentScreenRatio <= 1.79) {
-//     canvas.style.width = gameWidth + "px";
-//     canvas.style.height = gameHeight + "px";
-// }
-// else {
-//     canvas.style.width = 800 * optimalRatio + "px";
-//     canvas.style.height = 480 * optimalRatio + "px";
-// }
-
-
 class plataformaDoElevador {
     
     constructor() {
@@ -31,31 +8,80 @@ class plataformaDoElevador {
     }
 }
 
-var yChao = 550;
+var solicitacao = [];
+var yChao = 0;
+var yChaoMax = 100;
 
 /* Prédio */
 var xPredio = 100;
-var yPredio = 50;
+var yPredio = 100;
+var xPredioMax = xPredio + 600;
+var yPredioMax = yPredio + 500;
 var pAndar = 100;
 var quantidadeAndares = 5;
 
 /* Elevador */
-var xElevador = xPredio + 450 / 2;
-var yElevador = yChao - 100;
+var xElevador = (xPredio + xPredioMax - 100) / 2;
+var yElevador = yChaoMax;
+var xElevadorRelativo = xElevador + 100
+var yElevadorRelativo = yElevador + 100
 var yElevadorSolicitado = yElevador;
+var frameJumpElevador = 1;
 
+let canvasHeight = canvas.height;
+let canvasWidth = canvas.width;
 
 desenharFrame();
 
 function desenharFrame() {
     limparFrame();
+    logicaNegocio();
+    desenharCenario();
+}
 
+function desenharCenario() {
+    desenharCeu();
     desenharChao();
     desenharPredio();
     desenharElevador();
+}
 
-    document.getElementById("yElevadorSolicitado").value = yElevadorSolicitado;
-    document.getElementById("yElevador").value = yElevador;
+function logicaNegocio() {
+    logicaElevador();
+}
+
+function logicaElevador() {
+    //filtrar solictacao que estão como não processado
+    result = solicitacao.filter((item) => {
+        return item['processado'] == false;
+    })  
+
+    if (result.length > 0) {
+        solicitacao_atual = result[0]
+        
+        //yElevadorSolicitado
+        // andarAtualElevador = yElevador == 0 ? 0 : yElevador / 100
+        let andarAtualElevador = yElevador
+        let andarAtualP = solicitacao_atual['andarAtual'] * 100
+
+        if (andarAtualP != andarAtualElevador) {
+            yElevadorSolicitado = andarAtualP;
+            if(yElevador > yElevadorSolicitado) {
+                yElevador -= frameJumpElevador;
+            } else if(yElevador < yElevadorSolicitado) {
+                 yElevador += frameJumpElevador;
+            }
+        } else {
+            solicitacao_atual['processado'] = true
+        }
+    }
+
+    console.log(result);
+}
+
+function desenharCeu() {
+    ctx.fillStyle = '#00bfff';
+    fillRectCoord(0, 0, canvasWidth, canvasHeight);
 }
 
 function limparFrame() {
@@ -64,61 +90,92 @@ function limparFrame() {
 
 function desenharChao() {
     ctx.fillStyle = 'gray';
-    ctx.fillRect(0, yChao, canvas.width, 50); 
+    fillRectCoord(0, yChao, canvasWidth, yChaoMax)
+}
+
+function fillRectCoord(x, y, width, height) {
+    const x1 = x
+    const y1 = canvasHeight - y
+    const y2 = canvasHeight - height - y1
+    ctx.fillRect(x1,y1, width - x1, y2); 
+}
+
+function strokeRectCoord(x, y, width, height) {
+    const x1 = x
+    const y1 = canvasHeight - y
+    const y2 = canvasHeight - height - y1
+    ctx.strokeRect(x1,y1, width - x1, y2); 
 }
 
 
 function desenharPredio() {
-    ctx.fillStyle = 'black';
-    ctx.strokeRect(xPredio, yPredio, 550, 500); 
+    ctx.fillStyle = 'orange';
+    fillRectCoord(xPredio, yPredio, xPredioMax, yPredioMax); 
 
     for(var i = 0; i < 5; i++) {
         ctx.beginPath();
-        ctx.moveTo(xPredio,yPredio + (i * pAndar));
-        ctx.lineTo(xPredio + 550,yPredio + (i * pAndar));
+        ctx.moveTo(xPredio, yPredio + (i * pAndar));
+        ctx.lineTo(xPredioMax, yPredio + (i * pAndar));
         ctx.closePath();
         ctx.stroke();
     }
 
-    ctx.strokeRect(xPredio + 450 / 2, yPredio, pAndar, 500); 
+    strokeRectCoord(xElevador, yPredio, xElevadorRelativo, yPredioMax); 
 }
 
 
 function desenharElevador() {
-
-    var frameJumpElevador = 10;
-    if(yElevador > yElevadorSolicitado) {
-        yElevador -= frameJumpElevador;
-    } else if(yElevador < yElevadorSolicitado) {
-         yElevador += frameJumpElevador;
-    }
-
     ctx.lineWidth = 10;
-    ctx.strokeRect(xElevador, yElevador, 100, 100); 
+    yElevadorRelativo = yElevador + 100;
+    strokeRectCoord(xElevador, yElevador, xElevadorRelativo, yElevadorRelativo); 
     ctx.lineWidth = 1;
 
 }
 
-function definirAndar(numeroAndar) {
-    if(numeroAndar <= 0 || numeroAndar > quantidadeAndares) {
-        console.log("Andar indexistente");
+function subirAndar() {
+    yElevadorSolicitado += pAndar;
+}
+
+function descerAndar() {
+    yElevadorSolicitado -= pAndar;
+}
+
+function adicionarSolicitacao() {
+    let numeroAndarDesejado = document.getElementById("numeroAndarDesejado").value;
+    let andarAtual = document.getElementById("andarAtual").value;
+    
+    if(validarSolicitacao(numeroAndarDesejado, andarAtual)) {
+        solicitacao.push({
+            numeroAndarDesejado: parseInt(numeroAndarDesejado),
+            andarAtual: parseInt(andarAtual),
+            processado: false
+        });
+    }
+}
+
+function validarSolicitacao(numeroAndarDesejado, andarAtual) {
+    if(
+        (numeroAndarDesejado <= 0 || numeroAndarDesejado > quantidadeAndares)
+        && (andarAtual <= 0 || andarAtual > quantidadeAndares)) {
+        alert("Andar indexistente");
         return false;
     } else {
-        numeroAndar -= 1;
-        yElevadorSolicitado = yPredio + ((quantidadeAndares - 1 - numeroAndar) * pAndar);
+        // numeroAndar -= 1;
+        // yElevadorSolicitado = yPredio + ((quantidadeAndares - 1 - numeroAndar) * pAndar);
         return true;
     }
 }
 
 document.addEventListener('keydown', function(e) {
-    if(e.keyCode == 38) {
-        yElevadorSolicitado += pAndar;
+    if(e.keyCode == 40) {
+        descerAndar();
     }
 
-    if(e.keyCode == 40) {
-        yElevadorSolicitado -= pAndar;
+    if(e.keyCode == 38) {
+        subirAndar();
     }
+    console.log(yElevadorSolicitado)
 });
 
 
-setInterval(desenharFrame, 100);
+setInterval(desenharFrame, 15);
